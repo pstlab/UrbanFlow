@@ -43,10 +43,22 @@ class SliderComponent extends Component<void, HTMLDivElement> {
   }
 }
 
+interface Tile {
+  Lat: number;
+  LatMax: number;
+  LatMin: number;
+  Lon: number;
+  LonMax: number;
+  LonMin: number;
+  TileX: number;
+  TileY: number;
+}
+
 class MyApp extends AppComponent {
 
   // private readonly body: BodyComponent;
   private map: MapComponent | undefined;
+  private tiles: L.LatLngBoundsExpression[] = [];
 
   constructor() {
     super();
@@ -63,6 +75,13 @@ class MyApp extends AppComponent {
 
     const slider = new SliderComponent();
     this.map.add_child(slider);
+
+    fetch('/tiles')
+      .then(response => response.json())
+      .then((data: Tile[]) => this.tiles = data.map(tileData => [[tileData.LatMin, tileData.LonMin], [tileData.LatMax, tileData.LonMax]]))
+      .catch(error => console.error('Error fetching tiles:', error));
+
+    console.log('Tiles loaded:', this.tiles);
   }
 }
 
