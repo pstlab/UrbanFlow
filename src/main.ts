@@ -69,36 +69,48 @@ class MyApp extends AppComponent {
 
     const slider = new SliderComponent((value: number) => {
       for (const [category, layer] of this.c_layers.entries()) {
-        this.map?.remove_layer(layer);
+        this.map!.remove_layer(layer);
         const new_layer = this.layers.get(category)![value];
-        this.map?.add_layer(new_layer);
+        this.map!.add_layer(new_layer);
         this.c_layers.set(category, new_layer);
       }
     });
 
-    this.add_child(new Offcanvas(offcanvas_id, (start: string, end: string, hours: string, predictions: Prediction[]) => {
-      console.log('Start:', start);
-      console.log('End:', end);
-      console.log('Hours:', hours);
-      console.log('Predictions:', predictions);
-      this.layers.clear();
-      this.c_layers.clear();
-      this.times.clear();
-      let times = 0;
-      for (const prediction of predictions) {
-        this.layers.set(prediction.Category, []);
-        this.times.set(prediction.Category, prediction.time);
-        if (times < prediction.time.length) times = prediction.time.length;
-        for (const [time_idx, _] of prediction.time.entries()) {
-          const tiles: HeatTile[] = [];
-          for (const [tile_idx, tile_id] of prediction['Tile ID'].entries())
-            tiles.push({ bounds: this.tiles[tile_id], value: prediction.Tile_predictions[tile_idx][time_idx] });
-          const layer = new HeatMapLayer(tiles);
-          this.layers.get(prediction.Category)?.push(layer);
+    this.add_child(new Offcanvas(offcanvas_id,
+      (selected: boolean, category: string) => {
+        if (selected) {
+          const layer = this.layers.get(category)![slider.input.valueAsNumber];
+          this.map!.add_layer(layer);
+          this.c_layers.set(category, layer);
+        } else {
+          const layer = this.c_layers.get(category)!;
+          this.map!.remove_layer(layer);
+          this.c_layers.delete(category);
         }
-      }
-      slider.input.max = String(times - 1);
-    }));
+      },
+      (start: string, end: string, hours: string, predictions: Prediction[]) => {
+        console.log('Start:', start);
+        console.log('End:', end);
+        console.log('Hours:', hours);
+        console.log('Predictions:', predictions);
+        this.layers.clear();
+        this.c_layers.clear();
+        this.times.clear();
+        let times = 0;
+        for (const prediction of predictions) {
+          this.layers.set(prediction.Category, []);
+          this.times.set(prediction.Category, prediction.time);
+          if (times < prediction.time.length) times = prediction.time.length;
+          for (const [time_idx, _] of prediction.time.entries()) {
+            const tiles: HeatTile[] = [];
+            for (const [tile_idx, tile_id] of prediction['Tile ID'].entries())
+              tiles.push({ bounds: this.tiles[tile_id], value: prediction.Tile_predictions[tile_idx][time_idx] });
+            const layer = new HeatMapLayer(tiles);
+            this.layers.get(prediction.Category)?.push(layer);
+          }
+        }
+        slider.input.max = String(times - 1);
+      }));
 
     this.map = new MapComponent();
     this.map.element.style.width = '100%'; // Constrain to parent width

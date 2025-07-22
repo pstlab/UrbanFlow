@@ -9,7 +9,7 @@ export interface Prediction {
 
 export class Offcanvas extends Component<void, HTMLDivElement> {
 
-  constructor(id: string, onPredictionsLoaded: (start: string, end: string, hours: string, predictions: Prediction[]) => void) {
+  constructor(id: string, onSelected: (selected: boolean, category: string) => void, onPredictionsLoaded: (start: string, end: string, hours: string, predictions: Prediction[]) => void) {
     super(undefined, document.createElement('div'));
 
     this.element.classList.add('offcanvas', 'offcanvas-start', 'd-flex');
@@ -167,7 +167,47 @@ export class Offcanvas extends Component<void, HTMLDivElement> {
       onPredictionsLoaded(from_date_select.value, to_date_select.value, num_hours_input.value, predictions);
     });
 
-    body.append(from_date_select_group, to_date_select_group, load_data_button, make_preprocessed_data_button, num_hours_group, get_predictions_button);
+    // Add prediction types checkboxes
+    const prediction_types_group = document.createElement('div');
+    prediction_types_group.classList.add('mb-3');
+
+    const prediction_types_label = document.createElement('label');
+    prediction_types_label.classList.add('form-label');
+    prediction_types_label.textContent = 'Select Prediction Types';
+
+    prediction_types_group.append(prediction_types_label);
+
+    const predictionTypes = [
+      "all",
+      "foreigners",
+      "intraregion",
+      "italians",
+      "outregion",
+      "pendolari",
+      "resident"
+    ];
+
+    predictionTypes.forEach(type => {
+      const checkbox_group = document.createElement('div');
+      checkbox_group.classList.add('form-check');
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.classList.add('form-check-input');
+      checkbox.id = `checkbox-${type}`;
+      checkbox.checked = false;
+      checkbox.addEventListener('change', () => onSelected(checkbox.checked, type));
+
+      const checkbox_label = document.createElement('label');
+      checkbox_label.classList.add('form-check-label');
+      checkbox_label.htmlFor = `checkbox-${type}`;
+      checkbox_label.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+
+      checkbox_group.append(checkbox, checkbox_label);
+      prediction_types_group.append(checkbox_group);
+    });
+
+    body.append(from_date_select_group, to_date_select_group, load_data_button, make_preprocessed_data_button, num_hours_group, get_predictions_button, prediction_types_group);
 
     this.element.append(body);
   }
