@@ -46,9 +46,6 @@ export class Offcanvas extends Component<void, HTMLDivElement> {
 
     to_date_select_group.append(to_date_select_label, to_date_select);
 
-    const num_days_group = document.createElement('div');
-    num_days_group.classList.add('input-group', 'mb-3');
-
     const load_data_button = document.createElement('button');
     load_data_button.classList.add('btn', 'btn-primary', 'mb-3', 'w-100');
     load_data_button.type = 'button';
@@ -71,44 +68,61 @@ export class Offcanvas extends Component<void, HTMLDivElement> {
         });
     });
 
-    const num_days_input = document.createElement('input');
-    num_days_input.type = 'number';
-    num_days_input.classList.add('form-control');
-    num_days_input.placeholder = 'Number of days';
-    num_days_input.value = '7'; // Default value
-    num_days_input.min = '1';
-    num_days_input.step = '1';
-
-    const num_days_button = document.createElement('button');
-    num_days_button.classList.add('btn', 'btn-outline-secondary', 'btn-sm');
-    num_days_button.type = 'button';
-    num_days_button.textContent = 'Load';
-    num_days_button.addEventListener('click', () => {
-      num_days_button.disabled = true;
-      num_days_button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...';
-      fetch(`/set_input_data/${num_days_input.value}`)
+    const make_processed_data_button = document.createElement('button');
+    make_processed_data_button.classList.add('btn', 'btn-primary', 'mb-3', 'w-100');
+    make_processed_data_button.type = 'button';
+    make_processed_data_button.textContent = 'Make Processed Data';
+    make_processed_data_button.addEventListener('click', () => {
+      console.log('Make processed data button clicked');
+      make_processed_data_button.disabled = true;
+      make_processed_data_button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Processing...';
+      fetch('/make_processed_data')
         .then(response => response.json())
         .then(data => {
-          num_days_button.disabled = false;
-          num_days_button.textContent = 'Load';
+          make_processed_data_button.disabled = false;
+          make_processed_data_button.textContent = 'Make Processed Data';
+          console.log('Processed data created:', data);
+        })
+        .catch(error => {
+          make_processed_data_button.disabled = false;
+          make_processed_data_button.textContent = 'Make Processed Data';
+          console.error('Error creating processed data:', error);
+        });
+    });
+
+    const num_hours_group = document.createElement('div');
+    num_hours_group.classList.add('input-group', 'mb-3');
+
+    const num_hours_input = document.createElement('input');
+    num_hours_input.type = 'number';
+    num_hours_input.classList.add('form-control');
+    num_hours_input.placeholder = 'Number of hours';
+    num_hours_input.value = '24'; // Default value
+    num_hours_input.min = '1';
+    num_hours_input.step = '1';
+
+    const num_hours_button = document.createElement('button');
+    num_hours_button.classList.add('btn', 'btn-outline-secondary', 'btn-sm');
+    num_hours_button.type = 'button';
+    num_hours_button.textContent = 'Make Predictions';
+    num_hours_button.addEventListener('click', () => {
+      num_hours_button.disabled = true;
+      num_hours_button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...';
+      fetch(`/make_predictions/${from_date_select.value}/${to_date_select.value}/${num_hours_input.value}`)
+        .then(response => response.json())
+        .then(data => {
+          num_hours_button.disabled = false;
+          num_hours_button.textContent = 'Make Predictions';
           console.log('Data loaded:', data);
         })
         .catch(error => {
-          num_days_button.disabled = false;
-          num_days_button.textContent = 'Load';
+          num_hours_button.disabled = false;
+          num_hours_button.textContent = 'Make Predictions';
           console.error('Error loading data:', error);
         });
     });
 
-    num_days_group.append(num_days_input, num_days_button);
-
-    const make_predictions_button = document.createElement('button');
-    make_predictions_button.classList.add('btn', 'btn-primary', 'mb-3', 'w-100');
-    make_predictions_button.type = 'button';
-    make_predictions_button.textContent = 'Make Predictions';
-    make_predictions_button.addEventListener('click', () => {
-      console.log('Make predictions button clicked');
-    });
+    num_hours_group.append(num_hours_input, num_hours_button);
 
     const get_predictions_group = document.createElement('div');
     get_predictions_group.classList.add('input-group', 'mb-3');
@@ -137,7 +151,7 @@ export class Offcanvas extends Component<void, HTMLDivElement> {
 
     get_predictions_group.append(get_predictions_select, get_predictions_button);
 
-    body.append(from_date_select_group, to_date_select_group, load_data_button, num_days_group, make_predictions_button, get_predictions_group);
+    body.append(from_date_select_group, to_date_select_group, load_data_button, make_processed_data_button, num_hours_group, get_predictions_group);
 
     this.element.append(body);
   }
