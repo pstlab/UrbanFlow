@@ -9,7 +9,7 @@ class SliderComponent extends Component<void, HTMLDivElement> {
 
   public readonly input: HTMLInputElement;
 
-  constructor() {
+  constructor(onInput: (value: number) => void) {
     super(undefined, document.createElement('div'));
     this.element.style.position = 'absolute';
     this.element.style.left = '0';
@@ -36,8 +36,7 @@ class SliderComponent extends Component<void, HTMLDivElement> {
     this.input.addEventListener('touchstart', e => e.stopPropagation());
     this.input.addEventListener('touchmove', e => e.stopPropagation());
     this.input.addEventListener('touchend', e => e.stopPropagation());
-    this.input.addEventListener('input', () => {
-    });
+    this.input.addEventListener('input', () => onInput(parseInt(this.input.value)));
 
     this.element.appendChild(this.input);
   }
@@ -58,7 +57,9 @@ class MyApp extends AppComponent {
 
   private map: MapComponent | undefined;
   private tiles: L.LatLngBoundsExpression[] = []; // Store tile bounds
-  private layers: Map<string, Map<number, HeatMapLayer>> = new Map();
+  private layers: Map<string, HeatMapLayer[]> = new Map();
+  private c_layers: Map<string, HeatMapLayer> = new Map();
+  private times: Map<string, number[]> = new Map();
 
   constructor() {
     super();
@@ -66,17 +67,37 @@ class MyApp extends AppComponent {
     // Create and add brand element
     this.navbar.add_child(new BrandComponent('UrbanFlow', 'favicon.ico', 32, 32, offcanvas_id));
 
-    this.add_child(new Offcanvas(offcanvas_id, (predictions: Prediction[]) => {
+    const slider = new SliderComponent((value: number) => {
+      for (const [category, layer] of this.c_layers.entries()) {
+        this.map?.remove_layer(layer);
+        const new_layer = this.layers.get(category)![value];
+        this.map?.add_layer(new_layer);
+        this.c_layers.set(category, new_layer);
+      }
+    });
+
+    this.add_child(new Offcanvas(offcanvas_id, (start: string, end: string, hours: string, predictions: Prediction[]) => {
+      console.log('Start:', start);
+      console.log('End:', end);
+      console.log('Hours:', hours);
+      console.log('Predictions:', predictions);
       this.layers.clear();
+      this.c_layers.clear();
+      this.times.clear();
+      let times = 0;
       for (const prediction of predictions) {
-        this.layers.set(prediction.Category, new Map());
-        for (const [time_idx, time] of prediction.time.entries()) {
+        this.layers.set(prediction.Category, []);
+        this.times.set(prediction.Category, prediction.time);
+        if (times < prediction.time.length) times = prediction.time.length;
+        for (const [time_idx, _] of prediction.time.entries()) {
           const tiles: HeatTile[] = [];
           for (const [tile_idx, tile_id] of prediction['Tile ID'].entries())
             tiles.push({ bounds: this.tiles[tile_id], value: prediction.Tile_predictions[tile_idx][time_idx] });
-          this.layers.get(prediction.Category)!.set(time, new HeatMapLayer(tiles));
+          const layer = new HeatMapLayer(tiles);
+          this.layers.get(prediction.Category)?.push(layer);
         }
       }
+      slider.input.max = String(times - 1);
     }));
 
     this.map = new MapComponent();
@@ -84,7 +105,6 @@ class MyApp extends AppComponent {
     this.map.element.style.height = '100%'; // Constrain to parent height
     this.add_child(this.map);
 
-    const slider = new SliderComponent();
     this.map.add_child(slider);
 
     fetch('/tiles')

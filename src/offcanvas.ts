@@ -9,7 +9,7 @@ export interface Prediction {
 
 export class Offcanvas extends Component<void, HTMLDivElement> {
 
-  constructor(id: string, onPredictionsLoaded: (predictions: Prediction[]) => void) {
+  constructor(id: string, onPredictionsLoaded: (start: string, end: string, hours: string, predictions: Prediction[]) => void) {
     super(undefined, document.createElement('div'));
 
     this.element.classList.add('offcanvas', 'offcanvas-start', 'd-flex');
@@ -164,7 +164,7 @@ export class Offcanvas extends Component<void, HTMLDivElement> {
             get_predictions_button.textContent = 'Get Predictions';
             console.error('Error loading predictions:', error);
           });
-      onPredictionsLoaded(predictions);
+      onPredictionsLoaded(from_date_select.value, to_date_select.value, num_hours_input.value, predictions);
     });
 
     body.append(from_date_select_group, to_date_select_group, load_data_button, make_preprocessed_data_button, num_hours_group, get_predictions_button);
