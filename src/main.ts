@@ -56,9 +56,8 @@ interface Tile {
 
 class MyApp extends AppComponent {
 
-  // private readonly body: BodyComponent;
   private map: MapComponent | undefined;
-  private tiles: L.LatLngBoundsExpression[] = [];
+  private tiles: L.LatLngBoundsExpression[] = []; // Store tile bounds
 
   constructor() {
     super();
@@ -78,10 +77,11 @@ class MyApp extends AppComponent {
 
     fetch('/tiles')
       .then(response => response.json())
-      .then((data: Tile[]) => this.tiles = data.map(tileData => [[tileData.LatMin, tileData.LonMin], [tileData.LatMax, tileData.LonMax]]))
+      .then((data: Tile[]) => {
+        this.tiles = data.map(tileData => [[tileData.LatMin, tileData.LonMin], [tileData.LatMax, tileData.LonMax]]);
+        console.log('Tiles loaded:', this.tiles);
+      })
       .catch(error => console.error('Error fetching tiles:', error));
-
-    console.log('Tiles loaded:', this.tiles);
   }
 }
 
