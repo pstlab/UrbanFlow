@@ -1,7 +1,7 @@
 import './style.css'
 import { AppComponent, BrandComponent, Component } from '@ratiosolver/flick';
-import { MapComponent } from './map';
-import { Offcanvas } from './offcanvas';
+import { HeatMapLayer, MapComponent, type HeatTile } from './map';
+import { Offcanvas, type Prediction } from './offcanvas';
 
 const offcanvas_id = 'urban-flow-offcanvas';
 
@@ -58,6 +58,7 @@ class MyApp extends AppComponent {
 
   private map: MapComponent | undefined;
   private tiles: L.LatLngBoundsExpression[] = []; // Store tile bounds
+  private layers: Map<string, Map<number, HeatMapLayer>> = new Map();
 
   constructor() {
     super();
@@ -65,7 +66,18 @@ class MyApp extends AppComponent {
     // Create and add brand element
     this.navbar.add_child(new BrandComponent('UrbanFlow', 'favicon.ico', 32, 32, offcanvas_id));
 
-    this.add_child(new Offcanvas(offcanvas_id));
+    this.add_child(new Offcanvas(offcanvas_id, (predictions: Prediction[]) => {
+      this.layers.clear();
+      for (const prediction of predictions) {
+        this.layers.set(prediction.Category, new Map());
+        for (const [time_idx, time] of prediction.time.entries()) {
+          const tiles: HeatTile[] = [];
+          for (const [tile_idx, tile_id] of prediction['Tile ID'].entries())
+            tiles.push({ bounds: this.tiles[tile_id], value: prediction.Tile_predictions[tile_idx][time_idx] });
+          this.layers.get(prediction.Category)!.set(time, new HeatMapLayer(tiles));
+        }
+      }
+    }));
 
     this.map = new MapComponent();
     this.map.element.style.width = '100%'; // Constrain to parent width
